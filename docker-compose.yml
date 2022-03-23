@@ -1,0 +1,73 @@
+version: '3.7'
+
+services:
+    # Image Micro 02
+    micro_02:
+        build:
+            args:
+                user: emotta
+                uid: 1001
+            context: ./
+            dockerfile: Dockerfile
+        image: laravel-app
+        restart: unless-stopped
+        working_dir: /var/www/
+        volumes:
+            - ./:/var/www
+        networks:
+            - microservices02
+
+    # Image Queue
+    queue:
+        build:
+            args:
+                user: emotta
+                uid: 1001
+            context: ./
+            dockerfile: Dockerfile
+        command: 'php artisan queue:work'
+        restart: unless-stopped
+        volumes:
+            - ./:/var/www
+        networks:
+            - microservices02
+        depends_on:
+            - redis
+
+    # Nginx
+    nginx:
+        image: nginx:alpine
+        restart: unless-stopped
+        ports:
+            - 8200:80
+        volumes:
+            - ./docker/nginx/:/etc/nginx/conf.d/
+            - ./:/var/www
+        networks:
+            - microservices02
+
+    # MySQL Micro 02
+    db_micro_02:
+        image: mysql:5.7.22
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_USER: ${DB_USERNAME}
+        ports:
+            - 3361:3306
+        volumes:
+            - ./.docker/mysql/dbdata:/var/lib/mysql
+        networks:
+            - microservices02
+
+    # Redis
+    redis:
+        image: redis:latest
+        networks:
+            - microservices02
+
+networks:
+    microservices02:
+        driver: bridge
