@@ -16,6 +16,8 @@ services:
             - ./:/var/www
         networks:
             - microservices02
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
 
     # Image Queue
     queue:
